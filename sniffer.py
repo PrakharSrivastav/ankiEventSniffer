@@ -11,7 +11,6 @@ import argparse
 import json
 import requests
 import subprocess
-
 import websocket
 import thread
 
@@ -34,11 +33,14 @@ tentative_offtrack_position = 0x00
 
 temp_current_lap = 0
 
+pi_id_file="/home/pi/setup/PiId.dat"
+demozone_file="/home/pi/setup/demozone.dat"
 race_status_file = "/home/pi/setup/race_status.dat"
 race_count_file="/home/pi/setup/race_count.dat"
 race_lap_file="/home/pi/setup/race_lap_%s.dat"
 raceStatus = "UNKNOWN"
 raceCount = 0
+demozone = ""
 nodejs = "http://localhost:8888"
 LAPURI = "/iot/send/data/urn:oracle:iot:device:data:anki:car:lap"
 SPEEDURI = "/iot/send/data/urn:oracle:iot:device:data:anki:car:speed"
@@ -97,19 +99,30 @@ def setup(serport, delay=6):
     # Wait a bit for the connection to initialise
     time.sleep(delay)
 
+def getserial():
+  # Extract serial from cpuinfo file
+  cpuserial = "0000000000000000"
+  try:
+    f = open('/proc/cpuinfo','r')
+    for line in f:
+      if line[0:6]=='Serial':
+        cpuserial = line[10:26]
+    f.close()
+  except:
+    cpuserial = "ERROR000000000"
+  return cpuserial
+
 def getPiID():
-    p1 = subprocess.Popen(["cat","/proc/cpuinfo"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    p2 = subprocess.Popen(["grep","Serial"],stdin=p1.stdout,stdout=subprocess.PIPE)
-    idLine = p2.stdout.read()
-    p1.stdout.close()
-    p2.stdout.close()
-    splitVars = idLine.split(":")
-    if(len(splitVars) == 2):
-      id = splitVars[1].strip()
-      print "Pi ID '%s'" % id
-      return id
-    print "Pi ID not found."
-    return 0
+  try:
+    with open(pi_id_file, 'r') as f:
+      first_line = f.readline().rstrip()
+      return(first_line)
+  except (IOError):
+      print "%s file not found. Creating..." % pi_id_file
+      serial = getserial()
+      with open(pi_id_file,"w+") as f:
+        f.write(serial)
+      return(serial)
 
 def scanForDevices(scantime=3):
     """
@@ -158,6 +171,20 @@ def inc_lap_count(car):
     set_lap(car, l)
 #    return "%d" % l
     return l
+
+def read_file(filename):
+  try:
+    with open(filename, 'r') as f:
+      first_line = f.readline()
+      return(first_line)
+  except (IOError):
+      print "%s file not found!!!"
+      return ""
+
+def get_demozone():
+  global demozone_file
+  demozone = read_file(demozone_file)
+  return(demozone.rstrip())
 
 def selectDevice(devlist):
     """
@@ -209,6 +236,8 @@ def dumpPackets():
     global totalTrackSegment
     global previousLapTime
 
+    global demozone
+
     global final_track_1
     global final_track_2
     global first_track_1
@@ -225,8 +254,6 @@ def dumpPackets():
     global OFFTRACKURI
 
     """Dumps incoming packets to the display"""
-
-    wssend("FUERA DEL BUCLEEEEEE")
 
     # Get (pop) unprocessed BLE packets.
     packets =mySniffer.getPackets()
@@ -271,7 +298,7 @@ def dumpPackets():
                         dateTimeString=datetime.datetime.now().strftime("%y/%m/%d %H:%M:%S")
 
                         # Send to IoT Cloud
-                        jsonData = {"deviceId":piId,"dateTime":int(time.time()),"dateTimeString":dateTimeString,"raceStatus": raceStatus,"raceId":raceCount,"carId":myDeviceAddress,"carName":myCarName,"speed":speed,"trackId":trackId,"lap":currentLap}
+                        jsonData = {"demozone": demozone,"deviceId":piId,"dateTime":int(time.time()),"dateTimeString":dateTimeString,"raceStatus": raceStatus,"raceId":raceCount,"carId":myDeviceAddress,"carName":myCarName,"speed":speed,"trackId":trackId,"lap":currentLap}
                         postRest(jsonData, "%s%s" % (nodejs,SPEEDURI) )
 
                         #print "Track ID: %d" % trackId
@@ -301,7 +328,7 @@ def dumpPackets():
                               wssend("FILTER Finish Line: Increasing Lap count to %s" % temp_current_lap)
 
                               # Send to IoT Cloud
-                              jsonData = {"deviceId":piId,"dateTime":int(time.time()),"dateTimeString":dateTimeString,"raceStatus": raceStatus,"raceId":raceCount,"carId":myDeviceAddress,"carName":myCarName,"lap":currentLap,"lapTime":lapTime}
+                              jsonData = {"demozone": demozone,"deviceId":piId,"dateTime":int(time.time()),"dateTimeString":dateTimeString,"raceStatus": raceStatus,"raceId":raceCount,"carId":myDeviceAddress,"carName":myCarName,"lap":currentLap,"lapTime":lapTime}
                               postRest(jsonData, "%s%s" % (nodejs,LAPURI) )
 
                               wssend("%s: FILTER LapTime: %d" % (myCarName, lapTime))
@@ -349,7 +376,7 @@ def dumpPackets():
                                   currentLap = inc_lap_count(myCarName)
 
                                   # Send to IoT Cloud
-                                  jsonData = {"deviceId":piId,"dateTime":int(time.time()),"dateTimeString":dateTimeString,"raceStatus": raceStatus,"raceId":raceCount,"carId":myDeviceAddress,"carName":myCarName,"lap":currentLap,"lapTime":lapTime}
+                                  jsonData = {"demozone": demozone,"deviceId":piId,"dateTime":int(time.time()),"dateTimeString":dateTimeString,"raceStatus": raceStatus,"raceId":raceCount,"carId":myDeviceAddress,"carName":myCarName,"lap":currentLap,"lapTime":lapTime}
                                   postRest(jsonData, "%s%s" % (nodejs,LAPURI) )
                                   wssend("%s: FILTER LapTime: %d" % (myCarName, lapTime))
                                   trackSegment=0
@@ -396,7 +423,7 @@ def dumpPackets():
                         #print "%s - Sending Transition %s: Left/Right 0x%02x: 0x%02x - %s - [%d]" % (dateTimeString, myCarName, leftWheelDistance, rightWheelDistance,trackStyle,trackSegment)
                         wssend("%s - Sending Transition %s: Left/Right 0x%02x: 0x%02x - %s - [%d]" % (dateTimeString, myCarName, leftWheelDistance, rightWheelDistance,trackStyle,trackSegment))
                         # Send to IoT
-                        jsonData = {"deviceId":piId,"dateTime":int(time.time()),"dateTimeString":dateTimeString,"raceStatus": raceStatus,"raceId":raceCount,"carId":myDeviceAddress,"carName":myCarName,"trackStyle":trackStyle,"trackSegment":trackSegment,"lap":currentLap}
+                        jsonData = {"demozone": demozone,"deviceId":piId,"dateTime":int(time.time()),"dateTimeString":dateTimeString,"raceStatus": raceStatus,"raceId":raceCount,"carId":myDeviceAddress,"carName":myCarName,"trackStyle":trackStyle,"trackSegment":trackSegment,"lap":currentLap}
                         postRest(jsonData, "%s%s" % (nodejs,TRANSITIONURI) )
 
                     elif msgId == 0x2b: # ANKI_VEHICLE_MSG_V2C_VEHICLE_DELOCALIZED
@@ -409,7 +436,7 @@ def dumpPackets():
                       tentative_offtrack_position = last_known_position - 3
                       wssend("FILTER Vehicle Delocalised: Sending drone to position = %s" % tentative_offtrack_position)
 
-                      jsonData = {"deviceId":piId,"dateTime":int(time.time()),"dateTimeString":dateTimeString,"raceStatus": raceStatus,"raceId":raceCount,"carId":myDeviceAddress,"carName":myCarName,"lap":currentLap,"message":"Off Track", "lastKnownTrack":tentative_offtrack_position}
+                      jsonData = {"demozone": demozone,"deviceId":piId,"dateTime":int(time.time()),"dateTimeString":dateTimeString,"raceStatus": raceStatus,"raceId":raceCount,"carId":myDeviceAddress,"carName":myCarName,"lap":currentLap,"message":"Off Track", "lastKnownTrack":tentative_offtrack_position}
                       postRest(jsonData, "%s%s" % (nodejs,OFFTRACKURI) )
                     elif msgId == 0x1b: # ANKI_VEHICLE_MSG_V2C_BATTERY_LEVEL_RESPONSE
                       print " ".join(['0x%02x' % b for b in packetlist])
@@ -583,6 +610,8 @@ if __name__ == '__main__':
             sys.stdout.flush()
         else:
             print "ERROR: Could not find the selected device"
+
+        demozone = get_demozone()
 
         # Dump packets
         while True:
