@@ -525,6 +525,10 @@ if __name__ == '__main__':
         print "Unable to open serial port '" + args.serialport + "'"
         sys.exit(-1)
 
+    # Optionally display some information about the sniffer
+    if args.verbose:
+        print "Sniffer Firmware Version: " + str(mySniffer.swversion)
+
 """
     try:
         print "Opening WebSocket..."
@@ -541,10 +545,6 @@ if __name__ == '__main__':
         print "Error during setup WebSockets"
         sys.stdout.flush()
 """
-
-    # Optionally display some information about the sniffer
-    if args.verbose:
-        print "Sniffer Firmware Version: " + str(mySniffer.swversion)
 
     # Scan for devices in range until the user makes a selection
     try:
