@@ -11,7 +11,7 @@ import argparse
 import json
 import requests
 import subprocess
-import websocket
+#import websocket
 import thread
 
 from SnifferAPI import Logger
@@ -277,16 +277,16 @@ def dumpPackets():
                   #print packet.blePacket.payload
                   if len(packetlist) > 8:
                     raw = " ".join(['0x%02x' % b for b in packet.blePacket.payload])
-                    wssend("%s - %s" % (dateTimeString, raw))
+#                    wssend("%s - %s" % (dateTimeString, raw))
                     msgId = packet.blePacket.payload[8]
                     if msgId == 0x32: # U-Turn
                       #print "U-Turn 0x32"
-                      wssend("U-Turn 0x32")
+#                      wssend("U-Turn 0x32")
                       print " ".join(['0x%02x' % b for b in packet.blePacket.payload])
                     if msgId == 0x27:
                       if len(packet.blePacket.payload) > 16:
                         #print "%s - POSITION UPDATE" % dateTimeString
-                        wssend("%s - POSITION UPDATE" % dateTimeString)
+#                        wssend("%s - POSITION UPDATE" % dateTimeString)
                         trackLocation = packet.blePacket.payload[9]
                         trackId = packet.blePacket.payload[10]
                         speed = packet.blePacket.payload[16]<<8 | packet.blePacket.payload[15]
@@ -308,11 +308,11 @@ def dumpPackets():
 
                         if (trackId == 34):
 
-                          wssend("%s - FILTER Finish Line Crossed" % dateTimeString)
+#                          wssend("%s - FILTER Finish Line Crossed" % dateTimeString)
 
                           # SET last_known_position to FINISH LINE to avoid the finish line missed check
                           last_known_position = 0x34
-                          wssend("FILTER Setting last_known_position to = %s " % last_known_position)
+#                          wssend("FILTER Setting last_known_position to = %s " % last_known_position)
 
                           timeNow = int(time.time()*1000)
                           if(previousLapTime == 0):
@@ -325,20 +325,20 @@ def dumpPackets():
                               # Increase current lap
                               currentLap = inc_lap_count(myCarName)
                               temp_current_lap += 1
-                              wssend("FILTER Finish Line: Increasing Lap count to %s" % temp_current_lap)
+#                              wssend("FILTER Finish Line: Increasing Lap count to %s" % temp_current_lap)
 
                               # Send to IoT Cloud
                               jsonData = {"demozone": demozone,"deviceId":piId,"dateTime":int(time.time()),"dateTimeString":dateTimeString,"raceStatus": raceStatus,"raceId":raceCount,"carId":myDeviceAddress,"carName":myCarName,"lap":currentLap,"lapTime":lapTime}
                               postRest(jsonData, "%s%s" % (nodejs,LAPURI) )
 
-                              wssend("%s: FILTER LapTime: %d" % (myCarName, lapTime))
+#                              wssend("%s: FILTER LapTime: %d" % (myCarName, lapTime))
                               trackSegment=0
-                              wssend("FILTER Reset previous lap time.")
+#                              wssend("FILTER Reset previous lap time.")
                               previousLapTime=timeNow
                             else:
                               #print "%s: Tracksegment: %d" % (myCarName, trackSegment)
                               #print "%s: LapTime: %d" % (myCarName, lapTime)
-                              wssend("FILTER Lap too short... ignoring.")
+#                              wssend("FILTER Lap too short... ignoring.")
                               #trackSegment=0
 
 
@@ -353,16 +353,16 @@ def dumpPackets():
                         # VICTOR
                         # Get the new position
                         new_known_position = packet.blePacket.payload[9]
-                        wssend("FILTER TRANSITION UPDATE TO POSITION: %s" % new_known_position)
-                        wssend("FILTER COMMING FROM POSITION: %s" % last_known_position)
+#                        wssend("FILTER TRANSITION UPDATE TO POSITION: %s" % new_known_position)
+#                        wssend("FILTER COMMING FROM POSITION: %s" % last_known_position)
                         # Check if we are in the two first tracks.
                         if (new_known_position == first_track_1) or (new_known_position == first_track_2):
                             # CHECK IF WE LOSE THE FINISH LINE Event
                             if (new_known_position == first_track_2) and (last_known_position == first_track_1):
-                                wssend("FILTER TRANSITION TO TRACK 1 to TRACK 2.... Ignoring")
+                                print "FILTER TRANSITION TO TRACK 1 to TRACK 2.... Ignoring"
                             elif (last_known_position == final_track_1) or (last_known_position == final_track_2):
                                 # THERE WAS NOT FINISH LINE EVENT
-                                wssend("%s - FILTER Finish Line Event Missed" % dateTimeString)
+#                                wssend("%s - FILTER Finish Line Event Missed" % dateTimeString)
 
                                 timeNow = int(time.time()*1000)
                                 if(previousLapTime == 0):
@@ -378,23 +378,23 @@ def dumpPackets():
                                   # Send to IoT Cloud
                                   jsonData = {"demozone": demozone,"deviceId":piId,"dateTime":int(time.time()),"dateTimeString":dateTimeString,"raceStatus": raceStatus,"raceId":raceCount,"carId":myDeviceAddress,"carName":myCarName,"lap":currentLap,"lapTime":lapTime}
                                   postRest(jsonData, "%s%s" % (nodejs,LAPURI) )
-                                  wssend("%s: FILTER LapTime: %d" % (myCarName, lapTime))
+#                                  wssend("%s: FILTER LapTime: %d" % (myCarName, lapTime))
                                   trackSegment=0
                                   previousLapTime=timeNow
 
                                   temp_current_lap += 1
-                                  wssend("FILTER Finish Line missed: Increasing Lap count to %s" % temp_current_lap)
+#                                  wssend("FILTER Finish Line missed: Increasing Lap count to %s" % temp_current_lap)
 
                                 else:
-                                  wssend("FILTER Lap too short... ignoring.")
+                                  print "FILTER Lap too short... ignoring."
                             else:
-                                wssend("FILTER FINISH LINE EVENT DETECTED.... ignoring.")
-                                wssend("FILTER current track = %s " % new_known_position)
-                                wssend("FILTER last track = %s " % last_known_position)
+                                print "FILTER FINISH LINE EVENT DETECTED.... ignoring."
+                                print "FILTER current track = %s " % new_known_position
+                                print "FILTER last track = %s " % last_known_position
 
                         # UPDATE CAR POSITION
                         last_known_position = new_known_position
-                        wssend("FILTER Setting last_known_position to = %s " % last_known_position)
+#                        wssend("FILTER Setting last_known_position to = %s " % last_known_position)
 
                         #print " ".join(['0x%02x' % b for b in packetlist])
                         leftWheelDistance = packet.blePacket.payload[24]
@@ -421,20 +421,20 @@ def dumpPackets():
 
 
                         #print "%s - Sending Transition %s: Left/Right 0x%02x: 0x%02x - %s - [%d]" % (dateTimeString, myCarName, leftWheelDistance, rightWheelDistance,trackStyle,trackSegment)
-                        wssend("%s - Sending Transition %s: Left/Right 0x%02x: 0x%02x - %s - [%d]" % (dateTimeString, myCarName, leftWheelDistance, rightWheelDistance,trackStyle,trackSegment))
+#                        wssend("%s - Sending Transition %s: Left/Right 0x%02x: 0x%02x - %s - [%d]" % (dateTimeString, myCarName, leftWheelDistance, rightWheelDistance,trackStyle,trackSegment))
                         # Send to IoT
                         jsonData = {"demozone": demozone,"deviceId":piId,"dateTime":int(time.time()),"dateTimeString":dateTimeString,"raceStatus": raceStatus,"raceId":raceCount,"carId":myDeviceAddress,"carName":myCarName,"trackStyle":trackStyle,"trackSegment":trackSegment,"lap":currentLap}
                         postRest(jsonData, "%s%s" % (nodejs,TRANSITIONURI) )
 
                     elif msgId == 0x2b: # ANKI_VEHICLE_MSG_V2C_VEHICLE_DELOCALIZED
                       #print "%s - Vehicle Delocalised" % dateTimeString
-                      wssend("%s - FILTER Vehicle Delocalised" % dateTimeString)
-                      wssend("FILTER Vehicle Delocalised: Last Known Possition = %s" % last_known_position)
+#                      wssend("%s - FILTER Vehicle Delocalised" % dateTimeString)
+#                      wssend("FILTER Vehicle Delocalised: Last Known Possition = %s" % last_known_position)
 
                       # Calculate Wehicle Delocalised position
                       # Based in our test it should be last_known_position - 3 aprox.
                       tentative_offtrack_position = last_known_position - 3
-                      wssend("FILTER Vehicle Delocalised: Sending drone to position = %s" % tentative_offtrack_position)
+#                      wssend("FILTER Vehicle Delocalised: Sending drone to position = %s" % tentative_offtrack_position)
 
                       jsonData = {"demozone": demozone,"deviceId":piId,"dateTime":int(time.time()),"dateTimeString":dateTimeString,"raceStatus": raceStatus,"raceId":raceCount,"carId":myDeviceAddress,"carName":myCarName,"lap":currentLap,"message":"Off Track", "lastKnownTrack":tentative_offtrack_position}
                       postRest(jsonData, "%s%s" % (nodejs,OFFTRACKURI) )
@@ -525,7 +525,7 @@ if __name__ == '__main__':
         print "Unable to open serial port '" + args.serialport + "'"
         sys.exit(-1)
 
-
+"""
     try:
         print "Opening WebSocket..."
         sys.stdout.flush()
@@ -540,6 +540,7 @@ if __name__ == '__main__':
     except Exception as e:
         print "Error during setup WebSockets"
         sys.stdout.flush()
+"""
 
     # Optionally display some information about the sniffer
     if args.verbose:
