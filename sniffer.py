@@ -529,7 +529,7 @@ if __name__ == '__main__':
     if args.verbose:
         print "Sniffer Firmware Version: " + str(mySniffer.swversion)
 
-"""
+    """
     try:
         print "Opening WebSocket..."
         sys.stdout.flush()
@@ -544,7 +544,7 @@ if __name__ == '__main__':
     except Exception as e:
         print "Error during setup WebSockets"
         sys.stdout.flush()
-"""
+    """
 
     # Scan for devices in range until the user makes a selection
     try:
