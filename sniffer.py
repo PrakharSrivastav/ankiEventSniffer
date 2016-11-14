@@ -338,7 +338,7 @@ def dumpPackets():
                             else:
                               #print "%s: Tracksegment: %d" % (myCarName, trackSegment)
                               #print "%s: LapTime: %d" % (myCarName, lapTime)
-#                              wssend("FILTER Lap too short... ignoring.")
+                              print "FILTER Lap too short... ignoring."
                               #trackSegment=0
 
 
