@@ -424,7 +424,7 @@ def dumpPackets():
 #                        wssend("%s - Sending Transition %s: Left/Right 0x%02x: 0x%02x - %s - [%d]" % (dateTimeString, myCarName, leftWheelDistance, rightWheelDistance,trackStyle,trackSegment))
                         # Send to IoT
                         jsonData = {"demozone": demozone,"deviceId":piId,"dateTime":int(time.time()),"dateTimeString":dateTimeString,"raceStatus": raceStatus,"raceId":raceCount,"carId":myDeviceAddress,"carName":myCarName,"trackStyle":trackStyle,"trackSegment":trackSegment,"lap":currentLap}
-                        postRest(jsonData, "%s%s" % (nodejs,TRANSITIONURI) )
+#                        postRest(jsonData, "%s%s" % (nodejs,TRANSITIONURI) )
 
                     elif msgId == 0x2b: # ANKI_VEHICLE_MSG_V2C_VEHICLE_DELOCALIZED
                       #print "%s - Vehicle Delocalised" % dateTimeString
