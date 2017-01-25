@@ -436,6 +436,8 @@ def dumpPackets():
                       tentative_offtrack_position = last_known_position - 3
 #                      wssend("FILTER Vehicle Delocalised: Sending drone to position = %s" % tentative_offtrack_position)
 
+                      if tentative_offtrack_position < 0:
+                          tentative_offtrack_position = 0
                       jsonData = {"demozone": demozone,"deviceId":piId,"dateTime":int(time.time()),"dateTimeString":dateTimeString,"raceStatus": raceStatus,"raceId":raceCount,"carId":myDeviceAddress,"carName":myCarName,"lap":currentLap,"message":"Off Track", "lastKnownTrack":tentative_offtrack_position}
                       postRest(jsonData, "%s%s" % (nodejs,OFFTRACKURI) )
                     elif msgId == 0x1b: # ANKI_VEHICLE_MSG_V2C_BATTERY_LEVEL_RESPONSE
