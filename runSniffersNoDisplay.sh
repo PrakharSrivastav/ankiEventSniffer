@@ -20,21 +20,21 @@ fi
 if [ $snifferDeviceCount -gt 0 ]; then
   numberRunning=`ps -ef | grep \/home\/pi\/ankiEventSniffer\/sniffer.py | grep carToFollow=Thermo | wc -l`
   if [ $numberRunning -lt 1 ]; then 
-    /home/pi/ankiEventSniffer/startThermo.sh > /home/pi/thermo.log&
+    /home/pi/ankiEventSniffer/startThermo.sh > /home/pi/logs/thermo.log&
   fi
 fi
 
 if [ $snifferDeviceCount -gt 1 ]; then
   numberRunning=`ps -ef | grep \/home\/pi\/ankiEventSniffer\/sniffer.py | grep carToFollow=Ground\ Shock | wc -l`
   if [ $numberRunning -lt 1 ]; then 
-    /home/pi/ankiEventSniffer/startGroundShock.sh > /home/pi/groundShock.log &
+    /home/pi/ankiEventSniffer/startGroundShock.sh > /home/pi/logs/groundShock.log &
   fi
 fi
 
 if [ $snifferDeviceCount -gt 2 ]; then
   numberRunning=`ps -ef | grep \/home\/pi\/ankiEventSniffer\/sniffer.py | grep carToFollow=Skull | wc -l`
   if [ $numberRunning -lt 1 ]; then 
-    /home/pi/ankiEventSniffer/startSkull.sh > /home/pi/skull.log&
+    /home/pi/ankiEventSniffer/startSkull.sh > /home/pi/logs/skull.log&
   fi
 fi
 
@@ -42,7 +42,7 @@ fi
 if [ $snifferDeviceCount -gt 3 ]; then
   numberRunning=`ps -ef | grep \/home\/pi\/ankiEventSniffer\/sniffer.py | grep carToFollow=Guardian | wc -l`
   if [ $numberRunning -lt 1 ]; then 
-    /home/pi/ankiEventSniffer/startGuardian.sh > /home/pi/guardian.log &
+    /home/pi/ankiEventSniffer/startGuardian.sh > /home/pi/logs/guardian.log &
   fi
 fi
 sleep 3
