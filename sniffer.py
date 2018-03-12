@@ -259,6 +259,7 @@ def dumpPackets():
     packets =mySniffer.getPackets()
     #print "dumpPackets() called. Packets dumped: %d" % len(packets)
     # Display the packets on the screen in verbose mode
+    lapTime = 0
     if args.verbose:
         for packet in packets:
             if packet.blePacket is not None:
