@@ -7,6 +7,11 @@ Anki Overdrive demo: python code to sniff BLE data between Mobile App and Anki c
  
 # Event types
 
+- The script captures bluetooth packets emitted by cars.
+- Further interprets the info and sends them as structured event to an http Endpoint.
+- Http endpoint performs further event processing. For more info look at [anki-rest](https://github.com/PrakharSrivastav/anki-rest)
+
+
 SPEED_MEASUREMENT
 ```json
  {
