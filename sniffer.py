@@ -1,18 +1,18 @@
-__author__    = "ktown"
+__author__ = "ktown"
 __copyright__ = "Copyright Adafruit Industries 2014 (adafruit.com)"
-__license__   = "MIT"
-__version__   = "0.1.0"
+__license__ = "MIT"
+__version__ = "0.1.0"
 
-import os
+# import os
 import sys
 import time
 import datetime
 import argparse
 import json
 import requests
-import subprocess
-#import websocket
-import thread
+# import subprocess
+# import websocket
+#import thread
 
 from SnifferAPI import Logger
 from SnifferAPI import Sniffer
@@ -33,11 +33,11 @@ tentative_offtrack_position = 0x00
 
 temp_current_lap = 0
 
-pi_id_file="/home/pi/setup/PiId.dat"
-demozone_file="/home/pi/setup/demozone.dat"
+pi_id_file = "/home/pi/setup/PiId.dat"
+demozone_file = "/home/pi/setup/demozone.dat"
 race_status_file = "/home/pi/setup/race_status.dat"
-race_count_file="/home/pi/setup/race_count.dat"
-race_lap_file="/home/pi/setup/race_lap_%s.dat"
+race_count_file = "/home/pi/setup/race_count.dat"
+race_lap_file = "/home/pi/setup/race_lap_%s.dat"
 raceStatus = "UNKNOWN"
 raceCount = 0
 demozone = ""
@@ -46,37 +46,42 @@ LAPURI = "/iot/send/data/urn:oracle:iot:device:data:anki:car:lap"
 SPEEDURI = "/iot/send/data/urn:oracle:iot:device:data:anki:car:speed"
 TRANSITIONURI = "/iot/send/data/urn:oracle:iot:device:data:anki:car:transition"
 OFFTRACKURI = "/iot/send/alert/urn:oracle:iot:device:event:anki:car:offtrack"
+datafile = "/home/pi/setup/data.dat"
 
 mySniffer = None
 """@type: SnifferAPI.Sniffer.Sniffer"""
 
+
 def get_race_status():
-  try:
-    with open(race_status_file, 'r') as f:
-      first_line = f.readline()
-      return(first_line)
-  except (IOError):
-      print "%s file not found!!!" % race_status_file
-      return "UNKNOWN"
+    try:
+        with open(race_status_file, 'r') as f:
+            first_line = f.readline()
+            return (first_line)
+    except (IOError):
+        print "%s file not found!!!" % race_status_file
+        return "UNKNOWN"
 
 def get_race_count():
-  try:
-    with open(race_count_file, 'r') as f:
-      first_line = f.readline()
-      return(int(first_line))
-  except (IOError):
-      print "%s file not found!!!" % race_count_file
-      return 0
+    try:
+        with open(race_count_file, 'r') as f:
+            first_line = f.readline()
+            return (int(first_line))
+    except (IOError):
+        print "%s file not found!!!" % race_count_file
+        return 0
 
-def postRest(message, url):
-    #print "posting %s" % message
-    #print "url %s" % url
-    data_json = json.dumps(message)
-    #print "posting %s" % data_json
+def postRest(message):
+    # print "posting %s" % message
+    # print "url %s" % url
+    # data_json = json.dumps(message)
+    print "posting %s" % message
     headers = {'Content-type': 'application/json'}
+    with open(datafile, 'a') as the_file:
+        the_file.write(json.dumps(message) + "\n")
+
 #    print "[REST] %s  - %s - %s" % (myCarName,url, data_json)
-    response = requests.post(url, data=data_json, headers=headers)
-#    print "%s" % response
+    response = requests.post("http://localhost:8080/anki-rest", json=message, headers=headers)
+    print "%s" % response
 #    sys.stdout.flush()
 
 def setup(serport, delay=6):
@@ -100,29 +105,29 @@ def setup(serport, delay=6):
     time.sleep(delay)
 
 def getserial():
-  # Extract serial from cpuinfo file
-  cpuserial = "0000000000000000"
-  try:
-    f = open('/proc/cpuinfo','r')
-    for line in f:
-      if line[0:6]=='Serial':
-        cpuserial = line[10:26]
-    f.close()
-  except:
-    cpuserial = "ERROR000000000"
-  return cpuserial
+    # Extract serial from cpuinfo file
+    cpuserial = "0000000000000000"
+    try:
+        f = open('/proc/cpuinfo', 'r')
+        for line in f:
+            if line[0:6] == 'Serial':
+                cpuserial = line[10:26]
+        f.close()
+    except:
+        cpuserial = "ERROR000000000"
+    return cpuserial
 
 def getPiID():
-  try:
-    with open(pi_id_file, 'r') as f:
-      first_line = f.readline().rstrip()
-      return(first_line)
-  except (IOError):
-      print "%s file not found. Creating..." % pi_id_file
-      serial = getserial()
-      with open(pi_id_file,"w+") as f:
-        f.write(serial)
-      return(serial)
+    try:
+        with open(pi_id_file, 'r') as f:
+            first_line = f.readline().rstrip()
+            return (first_line)
+    except (IOError):
+        print "%s file not found. Creating..." % pi_id_file
+        serial = getserial()
+        with open(pi_id_file, "w+") as f:
+            f.write(serial)
+        return (serial)
 
 def scanForDevices(scantime=3):
     """
@@ -140,51 +145,51 @@ def scanForDevices(scantime=3):
     return devs
 
 def get_current_lap(car):
-  global race_lap_file
-  filename = race_lap_file % car
-  try:
-    with open(filename, 'r') as f:
-      first_line = f.readline()
-      return(int(first_line))
-  except (IOError):
-      print "%s file not found. Creating..." % filename
-      with open(filename,"w+") as f:
-        f.write("0")
-      return 0
+    global race_lap_file
+    filename = race_lap_file % car
+    try:
+        with open(filename, 'r') as f:
+            first_line = f.readline()
+            return (int(first_line))
+    except (IOError):
+        print "%s file not found. Creating..." % filename
+        with open(filename, "w+") as f:
+            f.write("0")
+        return 0
 
 def set_lap(car, lap):
-  global race_lap_file
-  filename = race_lap_file % car
-  try:
-    with open(filename, 'r+') as f:
-      f.seek(0)
-      f.write("%s" % lap)
-      f.truncate()
-  except (IOError):
-      print "%s file not found. Creating..." % filename
-      with open(filename,"w+") as f:
-        f.write("%s" % lap)
+    global race_lap_file
+    filename = race_lap_file % car
+    try:
+        with open(filename, 'r+') as f:
+            f.seek(0)
+            f.write("%s" % lap)
+            f.truncate()
+    except (IOError):
+        print "%s file not found. Creating..." % filename
+        with open(filename, "w+") as f:
+            f.write("%s" % lap)
 
 def inc_lap_count(car):
-    l=int(get_current_lap(car))
-    l=l+1
+    l = int(get_current_lap(car))
+    l = l + 1
     set_lap(car, l)
-#    return "%d" % l
+    #    return "%d" % l
     return l
 
 def read_file(filename):
-  try:
-    with open(filename, 'r') as f:
-      first_line = f.readline()
-      return(first_line)
-  except (IOError):
-      print "%s file not found!!!"
-      return ""
+    try:
+        with open(filename, 'r') as f:
+            first_line = f.readline()
+            return (first_line)
+    except (IOError):
+        print "%s file not found!!!"
+        return ""
 
 def get_demozone():
-  global demozone_file
-  demozone = read_file(demozone_file)
-  return(demozone.rstrip())
+    global demozone_file
+    demozone = read_file(demozone_file)
+    return (demozone.rstrip())
 
 def selectDevice(devlist):
     """
@@ -205,18 +210,18 @@ def selectDevice(devlist):
             addressString = ":".join(['%02X' % a for a in d.address])
             print "Device: %s" % addressString
             print "  [{0}] {1} ({2}:{3}:{4}:{5}:{6}:{7}, RSSI = {8}) {9}".format(count, d.name,
-                                                                             "%02X" % d.address[0],
-                                                                             "%02X" % d.address[1],
-                                                                             "%02X" % d.address[2],
-                                                                             "%02X" % d.address[3],
-                                                                             "%02X" % d.address[4],
-                                                                             "%02X" % d.address[5],
-                                                                             d.RSSI,
-                                                                             d.carName)
+                                                                                 "%02X" % d.address[0],
+                                                                                 "%02X" % d.address[1],
+                                                                                 "%02X" % d.address[2],
+                                                                                 "%02X" % d.address[3],
+                                                                                 "%02X" % d.address[4],
+                                                                                 "%02X" % d.address[5],
+                                                                                 d.RSSI,
+                                                                                 d.carName)
         try:
             i = int(raw_input("\nSelect a device to sniff, or '0' to scan again\n> "))
         except KeyboardInterrupt:
-            raise KeyboardInterupt
+            raise KeyboardInterrupt
             return None
         except:
             return None
@@ -228,7 +233,6 @@ def selectDevice(devlist):
         else:
             # This will start a new scan
             return None
-
 
 def dumpPackets():
     global currentLap
@@ -256,8 +260,8 @@ def dumpPackets():
     """Dumps incoming packets to the display"""
 
     # Get (pop) unprocessed BLE packets.
-    packets =mySniffer.getPackets()
-    #print "dumpPackets() called. Packets dumped: %d" % len(packets)
+    packets = mySniffer.getPackets()
+    # print "dumpPackets() called. Packets dumped: %d" % len(packets)
     # Display the packets on the screen in verbose mode
     lapTime = 0
     if args.verbose:
@@ -265,214 +269,300 @@ def dumpPackets():
             if packet.blePacket is not None:
                 # Display the raw BLE packet payload
                 # Note: 'BlePacket' is nested inside the higher level 'Packet' wrapper class
-                #print "here1"
-                #print packet.payloadLength
-                if packet.payloadLength != 19: # 19 is a common 'who knows what' packet.  Chuck it.
-                  raceStatus = get_race_status()
-                  raceCount = get_race_count()
-                  currentLap = get_current_lap(myCarName)
-                  dateTimeString=datetime.datetime.now().strftime("%y/%m/%d %H:%M:%S:%f")
-                  packetlist = packet.blePacket.payload
-                  #print packet.blePacket.payload
-                  #print packet.eventCounter
-                  #print packet.blePacket.payload
-                  if len(packetlist) > 8:
-                    raw = " ".join(['0x%02x' % b for b in packet.blePacket.payload])
-#                    wssend("%s - %s" % (dateTimeString, raw))
-                    msgId = packet.blePacket.payload[8]
-                    if msgId == 0x32: # U-Turn
-                      #print "U-Turn 0x32"
-#                      wssend("U-Turn 0x32")
-                      print " ".join(['0x%02x' % b for b in packet.blePacket.payload])
-                    if msgId == 0x27:
-                      if len(packet.blePacket.payload) > 16:
-                        #print "%s - POSITION UPDATE" % dateTimeString
-#                        wssend("%s - POSITION UPDATE" % dateTimeString)
-                        trackLocation = packet.blePacket.payload[9]
-                        trackId = packet.blePacket.payload[10]
-                        speed = packet.blePacket.payload[16]<<8 | packet.blePacket.payload[15]
-                        speed = speed * 5
+                # print "here1"
+                # print packet.payloadLength
+                if packet.payloadLength != 19:  # 19 is a common 'who knows what' packet.  Chuck it.
+                    raceStatus = get_race_status()
+                    raceCount = get_race_count()
+                    currentLap = get_current_lap(myCarName)
+                    dateTimeString = datetime.datetime.now().strftime("%y/%m/%d %H:%M:%S:%f")
+                    packetlist = packet.blePacket.payload
+                    # print packet.blePacket.payload
+                    # print packet.eventCounter
+                    # print packet.blePacket.payload
+                    if len(packetlist) > 8:
+                        raw = " ".join(['0x%02x' % b for b in packet.blePacket.payload])
+                        #                    wssend("%s - %s" % (dateTimeString, raw))
+                        msgId = packet.blePacket.payload[8]
 
-                        #print "loc: %d" % trackLocation
-                        #print "id: %d" % trackId
-                        #print "Speed: %d" % speed
-                        dateTimeString=datetime.datetime.now().strftime("%y/%m/%d %H:%M:%S")
+                        if msgId == 0x32:  # U-Turn
+                            print "U-Turn 0x32"
+                            # wssend("U-Turn 0x32")
+                            print " ".join(['0x%02x' % b for b in packet.blePacket.payload])
 
-                        # Send to IoT Cloud
-                        jsonData = {"demozone": demozone,"deviceId":piId,"dateTime":int(time.time()),"dateTimeString":dateTimeString,"raceStatus": raceStatus,"raceId":raceCount,"carId":myDeviceAddress,"carName":myCarName,"speed":speed,"trackId":trackId,"lap":currentLap}
-                        postRest(jsonData, "%s%s" % (nodejs,SPEEDURI) )
+                        if msgId == 0x27:
+                            if len(packet.blePacket.payload) > 16:
+                                # print "%s - POSITION UPDATE" % dateTimeString
+                                # wssend("%s - POSITION UPDATE" % dateTimeString)
+                                trackLocation = packet.blePacket.payload[9]
+                                trackId = packet.blePacket.payload[10]
+                                speed = packet.blePacket.payload[16] << 8 | packet.blePacket.payload[15]
+                                speed = speed * 5
 
-                        #print "Track ID: %d" % trackId
-                        #sys.stdout.flush()
+                                # print "loc: %d" % trackLocation
+                                # print "id: %d" % trackId
+                                # print "Speed: %d" % speed
+                                dateTimeString = datetime.datetime.now().strftime("%y/%m/%d %H:%M:%S")
 
-                        # FINISH LINE EVENT
+                                # Send to IoT Cloud
+                                # Tracking speed
+                                jsonData = {
+                                    "demozone": demozone,
+                                    "deviceId": piId,
+                                    "dateTime": int(time.time()),
+                                    "dateTimeString": dateTimeString,
+                                    "raceStatus": raceStatus,
+                                    "raceId": raceCount,
+                                    "carId": myDeviceAddress,
+                                    "carName": myCarName,
+                                    "speed": speed,
+                                    "trackId": trackId,
+                                    "lap": currentLap,
+                                    "type": "SPEED_MEASUREMENT"
+                                }
+                                postRest(jsonData)
 
-                        if (trackId == 34):
+                                # print "Track ID: %d" % trackId
+                                # sys.stdout.flush()
 
-#                          wssend("%s - FILTER Finish Line Crossed" % dateTimeString)
+                                # FINISH LINE EVENT
 
-                          # SET last_known_position to FINISH LINE to avoid the finish line missed check
-                          last_known_position = 0x34
-#                          wssend("FILTER Setting last_known_position to = %s " % last_known_position)
+                                if (trackId == 34):
 
-                          timeNow = int(time.time()*1000)
-                          if(previousLapTime == 0):
-                            previousLapTime=timeNow
-                          else:
-                            lapTime = timeNow - previousLapTime
+                                    # wssend("%s - FILTER Finish Line Crossed" % dateTimeString)
 
-                            if(lapTime > 3000):
+                                    # SET last_known_position to FINISH LINE to avoid the finish line missed check
+                                    last_known_position = 0x34
+                                    # wssend("FILTER Setting last_known_position to = %s " % last_known_position)
 
-                              # Increase current lap
-                              currentLap = inc_lap_count(myCarName)
-                              temp_current_lap += 1
-#                              wssend("FILTER Finish Line: Increasing Lap count to %s" % temp_current_lap)
+                                    timeNow = int(time.time() * 1000)
+                                    if (previousLapTime == 0):
+                                        previousLapTime = timeNow
+                                    else:
+                                        lapTime = timeNow - previousLapTime
 
-                              # Send to IoT Cloud
-                              jsonData = {"demozone": demozone,"deviceId":piId,"dateTime":int(time.time()),"dateTimeString":dateTimeString,"raceStatus": raceStatus,"raceId":raceCount,"carId":myDeviceAddress,"carName":myCarName,"lap":currentLap,"lapTime":lapTime}
-                              postRest(jsonData, "%s%s" % (nodejs,LAPURI) )
+                                        if (lapTime > 3000):
 
-#                              wssend("%s: FILTER LapTime: %d" % (myCarName, lapTime))
-                              trackSegment=0
-#                              wssend("FILTER Reset previous lap time.")
-                              previousLapTime=timeNow
-                            else:
-                              #print "%s: Tracksegment: %d" % (myCarName, trackSegment)
-                              #print "%s: LapTime: %d" % (myCarName, lapTime)
-                              print "FILTER Lap too short... ignoring."
-                              #trackSegment=0
+                                            # Increase current lap
+                                            currentLap = inc_lap_count(myCarName)
+                                            temp_current_lap += 1
+                                            # wssend("FILTER Finish Line: Increasing Lap count to %s" % temp_current_lap)
 
+                                            # Send to IoT Cloud
+                                            jsonData = {
+                                                "demozone": demozone,
+                                                "deviceId": piId,
+                                                "dateTime": int(time.time()),
+                                                "dateTimeString": dateTimeString,
+                                                "raceStatus": raceStatus,
+                                                "raceId": raceCount,
+                                                "carId": myDeviceAddress,
+                                                "carName": myCarName,
+                                                "lap": currentLap,
+                                                "lapTime": lapTime,
+                                                "trackId": trackId,
+                                                "type": "LAP_COMPLETED"
+                                            }
+                                            postRest(jsonData)
 
-                            #print "Reset previous lap time."
-                            #previousLapTime=timeNow
+                                            # wssend("%s: FILTER LapTime: %d" % (myCarName, lapTime))
+                                            trackSegment = 0
+                                            # wssend("FILTER Reset previous lap time.")
+                                            previousLapTime = timeNow
+                                        else:
+                                            # print "%s: Tracksegment: %d" % (myCarName, trackSegment)
+                                            # print "%s: LapTime: %d" % (myCarName, lapTime)
+                                            print "FILTER Lap too short... ignoring."
+                                            # trackSegment=0
 
-                    elif msgId == 0x29:
-                      if len(packet.blePacket.payload) > 25:
-                        # print "%s - TRANSITION UPDATE: " % dateTimeString
-                        # wssend("%s - TRANSITION UPDATE: " % dateTimeString)
+                                        # print "Reset previous lap time."
+                                        # previousLapTime=timeNow
+                        elif msgId == 0x25:
+                            print 'lane change C2V driver attempted to change lane'
+                            jsonData =  {
+                                "demozone": demozone,
+                                "deviceId": piId,
+                                "dateTime": int(time.time()),
+                                "dateTimeString": dateTimeString,
+                                "raceStatus": raceStatus,
+                                "raceId": raceCount,
+                                "type": "LANE_CHANGED",
+                                "carId": myDeviceAddress,
+                                "carName": myCarName,
+                                "lap": currentLap
+                            }
+                            postRest(jsonData)
+                        elif msgId == 0x29:
+                            if len(packet.blePacket.payload) > 25:
+                                # print "%s - TRANSITION UPDATE: " % dateTimeString
+                                # wssend("%s - TRANSITION UPDATE: " % dateTimeString)
 
-                        # VICTOR
-                        # Get the new position
-                        new_known_position = packet.blePacket.payload[9]
-#                        wssend("FILTER TRANSITION UPDATE TO POSITION: %s" % new_known_position)
-#                        wssend("FILTER COMMING FROM POSITION: %s" % last_known_position)
-                        # Check if we are in the two first tracks.
-                        if (new_known_position == first_track_1) or (new_known_position == first_track_2):
-                            # CHECK IF WE LOSE THE FINISH LINE Event
-                            if (new_known_position == first_track_2) and (last_known_position == first_track_1):
-                                print "FILTER TRANSITION TO TRACK 1 to TRACK 2.... Ignoring"
-                            elif (last_known_position == final_track_1) or (last_known_position == final_track_2):
-                                # THERE WAS NOT FINISH LINE EVENT
-#                                wssend("%s - FILTER Finish Line Event Missed" % dateTimeString)
+                                # VICTOR
+                                # Get the new position
+                                new_known_position = packet.blePacket.payload[9]
+                                # wssend("FILTER TRANSITION UPDATE TO POSITION: %s" % new_known_position)
+                                # wssend("FILTER COMMING FROM POSITION: %s" % last_known_position)
+                                # Check if we are in the two first tracks.
+                                if (new_known_position == first_track_1) or (new_known_position == first_track_2):
+                                    # CHECK IF WE LOSE THE FINISH LINE Event
+                                    if (new_known_position == first_track_2) and (last_known_position == first_track_1):
+                                        print "FILTER TRANSITION TO TRACK 1 to TRACK 2.... Ignoring"
+                                    elif (last_known_position == final_track_1) or (
+                                            last_known_position == final_track_2):
+                                        # THERE WAS NOT FINISH LINE EVENT
+                                        # wssend("%s - FILTER Finish Line Event Missed" % dateTimeString)
 
-                                timeNow = int(time.time()*1000)
-                                if(previousLapTime == 0):
-                                  previousLapTime=timeNow
-                                else:
-                                  lapTime = timeNow - previousLapTime
+                                        timeNow = int(time.time() * 1000)
+                                        if (previousLapTime == 0):
+                                            previousLapTime = timeNow
+                                        else:
+                                            lapTime = timeNow - previousLapTime
 
-                                # ADD CONTROL TO AVOID FAKE LAPS
-                                if(lapTime > 3000):
+                                        # ADD CONTROL TO AVOID FAKE LAPS
+                                        if (lapTime > 3000):
 
-                                  currentLap = inc_lap_count(myCarName)
+                                            currentLap = inc_lap_count(myCarName)
 
-                                  # Send to IoT Cloud
-                                  jsonData = {"demozone": demozone,"deviceId":piId,"dateTime":int(time.time()),"dateTimeString":dateTimeString,"raceStatus": raceStatus,"raceId":raceCount,"carId":myDeviceAddress,"carName":myCarName,"lap":currentLap,"lapTime":lapTime}
-                                  postRest(jsonData, "%s%s" % (nodejs,LAPURI) )
-#                                  wssend("%s: FILTER LapTime: %d" % (myCarName, lapTime))
-                                  trackSegment=0
-                                  previousLapTime=timeNow
+                                            # Send to IoT Cloud
+                                            jsonData = {
+                                                "demozone": demozone,
+                                                "deviceId": piId,
+                                                "dateTime": int(time.time()),
+                                                "dateTimeString": dateTimeString,
+                                                "raceStatus": raceStatus,
+                                                "raceId": raceCount,
+                                                "carId": myDeviceAddress,
+                                                "carName": myCarName,
+                                                "lap": currentLap,
+                                                "lapTime": lapTime,
+                                                "type": "LAP_COMPLETED"
+                                            }
+                                            postRest(jsonData)
+                                            # wssend("%s: FILTER LapTime: %d" % (myCarName, lapTime))
+                                            trackSegment = 0
+                                            previousLapTime = timeNow
 
-                                  temp_current_lap += 1
-#                                  wssend("FILTER Finish Line missed: Increasing Lap count to %s" % temp_current_lap)
+                                            temp_current_lap += 1
+                                        # wssend("FILTER Finish Line missed: Increasing Lap count to %s" % temp_current_lap)
 
-                                else:
-                                  print "FILTER Lap too short... ignoring."
-                            else:
-                                print "FILTER FINISH LINE EVENT DETECTED.... ignoring."
-                                print "FILTER current track = %s " % new_known_position
-                                print "FILTER last track = %s " % last_known_position
+                                        else:
+                                            print "FILTER Lap too short... ignoring."
+                                    else:
+                                        print "FILTER FINISH LINE EVENT DETECTED.... ignoring."
+                                        print "FILTER current track = %s " % new_known_position
+                                        print "FILTER last track = %s " % last_known_position
 
-                        # UPDATE CAR POSITION
-                        last_known_position = new_known_position
-#                        wssend("FILTER Setting last_known_position to = %s " % last_known_position)
+                                # UPDATE CAR POSITION
+                                last_known_position = new_known_position
+                                # wssend("FILTER Setting last_known_position to = %s " % last_known_position)
 
-                        #print " ".join(['0x%02x' % b for b in packetlist])
-                        leftWheelDistance = packet.blePacket.payload[24]
-                        rightWheelDistance = packet.blePacket.payload[25]
+                                # print " ".join(['0x%02x' % b for b in packetlist])
+                                leftWheelDistance = packet.blePacket.payload[24]
+                                rightWheelDistance = packet.blePacket.payload[25]
 
-                        trackSegment=trackSegment+1
-                        trackStyle=""
-                        if leftWheelDistance == rightWheelDistance:
-                          trackStyle="Straight"
-                        elif leftWheelDistance == (rightWheelDistance+1):
-                          trackStyle="Straight"
-                        elif leftWheelDistance == (rightWheelDistance-1):
-                          trackStyle="Straight"
-                        elif leftWheelDistance == (rightWheelDistance+2):
-                          trackStyle="Straight"
-                        elif leftWheelDistance == (rightWheelDistance-2):
-                          trackStyle="Straight"
-                        elif leftWheelDistance > rightWheelDistance:
-                          trackStyle="Right Turn"
-                        elif leftWheelDistance < rightWheelDistance:
-                          trackStyle="Left Turn"
+                                trackSegment = trackSegment + 1
+                                trackStyle = ""
+                                if leftWheelDistance == rightWheelDistance:
+                                    trackStyle = "Straight"
+                                elif leftWheelDistance == (rightWheelDistance + 1):
+                                    trackStyle = "Straight"
+                                elif leftWheelDistance == (rightWheelDistance - 1):
+                                    trackStyle = "Straight"
+                                elif leftWheelDistance == (rightWheelDistance + 2):
+                                    trackStyle = "Straight"
+                                elif leftWheelDistance == (rightWheelDistance - 2):
+                                    trackStyle = "Straight"
+                                elif leftWheelDistance > rightWheelDistance:
+                                    trackStyle = "Right Turn"
+                                elif leftWheelDistance < rightWheelDistance:
+                                    trackStyle = "Left Turn"
 
-                        timeNow = int(time.time()*1000)
+                                timeNow = int(time.time() * 1000)
 
+                                # print "%s - Sending Transition %s: Left/Right 0x%02x: 0x%02x - %s - [%d]" % (dateTimeString, myCarName, leftWheelDistance, rightWheelDistance,trackStyle,trackSegment)
+                                # wssend("%s - Sending Transition %s: Left/Right 0x%02x: 0x%02x - %s - [%d]" % (dateTimeString, myCarName, leftWheelDistance, rightWheelDistance,trackStyle,trackSegment))
+                                # Send to IoT
+                                jsonData = {
+                                    "demozone": demozone,
+                                    "deviceId": piId,
+                                    "dateTime": int(time.time()),
+                                    "dateTimeString": dateTimeString,
+                                    "raceStatus": raceStatus,
+                                    "raceId": raceCount,
+                                    "carId": myDeviceAddress,
+                                    "carName": myCarName,
+                                    "trackStyle": trackStyle,
+                                    "trackSegment": trackSegment,
+                                    "lap": currentLap,
+                                    "type": "CAR_TRANSITIONED"
+                                }
+                                postRest(jsonData)
 
-                        #print "%s - Sending Transition %s: Left/Right 0x%02x: 0x%02x - %s - [%d]" % (dateTimeString, myCarName, leftWheelDistance, rightWheelDistance,trackStyle,trackSegment)
-#                        wssend("%s - Sending Transition %s: Left/Right 0x%02x: 0x%02x - %s - [%d]" % (dateTimeString, myCarName, leftWheelDistance, rightWheelDistance,trackStyle,trackSegment))
-                        # Send to IoT
-                        jsonData = {"demozone": demozone,"deviceId":piId,"dateTime":int(time.time()),"dateTimeString":dateTimeString,"raceStatus": raceStatus,"raceId":raceCount,"carId":myDeviceAddress,"carName":myCarName,"trackStyle":trackStyle,"trackSegment":trackSegment,"lap":currentLap}
-#                        postRest(jsonData, "%s%s" % (nodejs,TRANSITIONURI) )
+                        elif msgId == 0x2b:  # ANKI_VEHICLE_MSG_V2C_VEHICLE_DELOCALIZED
+                            # print "%s - Vehicle Delocalised" % dateTimeString
+                            # wssend("%s - FILTER Vehicle Delocalised" % dateTimeString)
+                            # wssend("FILTER Vehicle Delocalised: Last Known Possition = %s" % last_known_position)
 
-                    elif msgId == 0x2b: # ANKI_VEHICLE_MSG_V2C_VEHICLE_DELOCALIZED
-                      #print "%s - Vehicle Delocalised" % dateTimeString
-#                      wssend("%s - FILTER Vehicle Delocalised" % dateTimeString)
-#                      wssend("FILTER Vehicle Delocalised: Last Known Possition = %s" % last_known_position)
+                            # Calculate Wehicle Delocalised position
+                            # Based in our test it should be last_known_position - 3 aprox.
+                            tentative_offtrack_position = last_known_position - 3
+                            # wssend("FILTER Vehicle Delocalised: Sending drone to position = %s" % tentative_offtrack_position)
 
-                      # Calculate Wehicle Delocalised position
-                      # Based in our test it should be last_known_position - 3 aprox.
-                      tentative_offtrack_position = last_known_position - 3
-#                      wssend("FILTER Vehicle Delocalised: Sending drone to position = %s" % tentative_offtrack_position)
+                            if tentative_offtrack_position < 0:
+                                tentative_offtrack_position = 0
 
-                      if tentative_offtrack_position < 0:
-                          tentative_offtrack_position = 0
-                      jsonData = {"demozone": demozone,"deviceId":piId,"dateTime":int(time.time()),"dateTimeString":dateTimeString,"raceStatus": raceStatus,"raceId":raceCount,"carId":myDeviceAddress,"carName":myCarName,"lap":currentLap,"message":"Off Track", "lastKnownTrack":tentative_offtrack_position}
-                      postRest(jsonData, "%s%s" % (nodejs,OFFTRACKURI) )
-                    elif msgId == 0x1b: # ANKI_VEHICLE_MSG_V2C_BATTERY_LEVEL_RESPONSE
-                      print " ".join(['0x%02x' % b for b in packetlist])
+                            jsonData = {
+                                "demozone": demozone,
+                                "deviceId": piId,
+                                "dateTime": int(time.time()),
+                                "dateTimeString": dateTimeString,
+                                "raceStatus": raceStatus,
+                                "raceId": raceCount,
+                                "carId": myDeviceAddress,
+                                "carName": myCarName,
+                                "lap": currentLap,
+                                "type": "VEHICLE_DELOCALIZED",
+                                "lastKnownTrack": tentative_offtrack_position
+                            }
+                            postRest(jsonData)
+                        elif msgId == 0x1b:  # ANKI_VEHICLE_MSG_V2C_BATTERY_LEVEL_RESPONSE
+                            print " ".join(['0x%02x' % b for b in packetlist])
     else:
         print '.' * len(packets)
     return len(packets)
 
+"""
 def on_message(ws, message):
-	print message
+    print message
+
 
 def on_error(ws, error):
-	print error
+    print error
+
 
 def on_close(ws):
-	print "WS: ### closed ###"
+    print "WS: ### closed ###"
+
 
 def on_open(ws):
-	print "WS: ### open ###"
+    print "WS: ### open ###"
+
 
 def wssend(message):
-        try:
-              ws.send("%s - %s" % (myCarName, message))
-        except Exception as e:
-              pass
-
+    try:
+        ws.send("%s - %s" % (myCarName, message))
+    except Exception as e:
+        pass
 def start(ws):
-        try:
-              print "Trying to connect..."
-              sys.stdout.flush()
-	      ws.run_forever()
-        except Exception as e:
-              print "Error during setup WebSockets"
-              sys.stdout.flush()
+    try:
+        print "Trying to connect..."
+        sys.stdout.flush()
+        ws.run_forever()
+    except Exception as e:
+        print "Error during setup WebSockets"
+        sys.stdout.flush()
+
+"""
 
 if __name__ == '__main__':
     """Main program execution point"""
@@ -484,10 +574,12 @@ if __name__ == '__main__':
     # Mandatory arguments:
     argparser.add_argument("serialport",
                            help="serial port location ('COM14', '/dev/tty.usbserial-DN009WNO', etc.)")
-#    argparser.add_argument("deviceAddress",
-#                           help="Device Hex Address (e.g. CC:1E:BE:1E:AC:C9:01)",default="XX")
-    argparser.add_argument('--device', dest="deviceAddress", type=str, default="XX", help='Device Hex Address (e.g. CC:1E:BE:1E:AC:C9:01)')
-    argparser.add_argument('--carToFollow', dest="carToFollow", type=str, default="XX", help='Car name e.g. Skull, Guardian')
+    #    argparser.add_argument("deviceAddress",
+    #                           help="Device Hex Address (e.g. CC:1E:BE:1E:AC:C9:01)",default="XX")
+    argparser.add_argument('--device', dest="deviceAddress", type=str, default="XX",
+                           help='Device Hex Address (e.g. CC:1E:BE:1E:AC:C9:01)')
+    argparser.add_argument('--carToFollow', dest="carToFollow", type=str, default="XX",
+                           help='Car name e.g. Skull, Guardian')
 
     # Optional arguments:
     argparser.add_argument("-v", "--verbose",
@@ -504,17 +596,17 @@ if __name__ == '__main__':
     global totalTrackSegment
     global labNumber
     global ws
-    trackSegment=0
+    trackSegment = 0
     piId = getPiID()
     global previousLapTime
-    previousLapTime=0
+    previousLapTime = 0
     try:
-      txt = open("/home/pi/Desktop/totalTrackSegments")
-      totalTrackSegments = txt.read()
-      print "******  Track Segment Count: %s" % totalTrackSegments
+        txt = open("/home/pi/Desktop/totalTrackSegments")
+        totalTrackSegments = txt.read()
+        print "******  Track Segment Count: %s" % totalTrackSegments
     except IOError:
-      print "******  No totalTrackSegments file found.  Not counting track segments."
-      totalTrackSegments = -1
+        print "******  No totalTrackSegments file found.  Not counting track segments."
+        totalTrackSegments = -1
 
     # Display the libpcap logfile location
     # print "Logging data to " + os.path.join(Logger.logFilePath, "capture.pcap")
@@ -560,57 +652,57 @@ if __name__ == '__main__':
             print "Length of Dev list: %d" % len(devlist)
             retryCount = 0
             while len(devlist) == 0 and retryCount < 3:
-              retryCount = retryCount + 1
-              print "Couldn't find devices... trying again."
-              sys.stdout.flush()
-              mySniffer.doExit()
-              setup(args.serialport)
-              devlist = scanForDevices()
+                retryCount = retryCount + 1
+                print "Couldn't find devices... trying again."
+                sys.stdout.flush()
+                mySniffer.doExit()
+                setup(args.serialport)
+                devlist = scanForDevices()
             if retryCount == 3:
-              mySniffer.doExit()
-              exit()
+                mySniffer.doExit()
+                exit()
 
             if args.carToFollow == "XX":
-              if len(devlist):
-                  # Select a device
-                  d = selectDevice(devlist)
+                if len(devlist):
+                    # Select a device
+                    d = selectDevice(devlist)
             else:
-              print "Cars available:"
-              for dl in devlist.asList():
-                print "- %s" % dl.carName
-                if dl.carName == args.carToFollow:
-                  d = dl
-#              for dl in devlist.asList():
-#                addressString = ":".join(['%02X' % a for a in dl.address])
-#                addressString = addressString[:-3]
-#                print "Address String: %s" % addressString
-#                print "Device Address: %s" % args.deviceAddress
-#                if addressString == args.deviceAddress:
-#                  d = dl
+                print "Cars available:"
+                for dl in devlist.asList():
+                    print "- %s" % dl.carName
+                    if dl.carName == args.carToFollow:
+                        d = dl
+        #              for dl in devlist.asList():
+        #                addressString = ":".join(['%02X' % a for a in dl.address])
+        #                addressString = addressString[:-3]
+        #                print "Address String: %s" % addressString
+        #                print "Device Address: %s" % args.deviceAddress
+        #                if addressString == args.deviceAddress:
+        #                  d = dl
 
         # Start sniffing the selected device
         print "Attempting to follow device {0}:{1}:{2}:{3}:{4}:{5} - {6}".format("%02X" % d.address[0],
-                                                                           "%02X" % d.address[1],
-                                                                           "%02X" % d.address[2],
-                                                                           "%02X" % d.address[3],
-                                                                           "%02X" % d.address[4],
-                                                                           "%02X" % d.address[5],
-                                                                           "%s" % d.carName)
+                                                                                 "%02X" % d.address[1],
+                                                                                 "%02X" % d.address[2],
+                                                                                 "%02X" % d.address[3],
+                                                                                 "%02X" % d.address[4],
+                                                                                 "%02X" % d.address[5],
+                                                                                 "%s" % d.carName)
         print "Missed Packets: %d" % mySniffer.missedPackets
-        #print "send: " + str(mySniffer.sendTestPacketToSniffer("test"))
-        #x = mySniffer.getTestPacketFromSniffer
-        #print "Type:"
-        #type(x)
-        #print "get: " + str(x)
-        #from pprint import pprint
-        #pprint(x)
+        # print "send: " + str(mySniffer.sendTestPacketToSniffer("test"))
+        # x = mySniffer.getTestPacketFromSniffer
+        # print "Type:"
+        # type(x)
+        # print "get: " + str(x)
+        # from pprint import pprint
+        # pprint(x)
         sys.stdout.flush()
         myCarName = d.carName
         myDeviceAddress = ":".join(['%02X' % a for a in d.address])
         # Make sure we actually followed the selected device (i.e. it's still available, etc.)
         if d is not None:
             response = mySniffer.follow(d)
-            #print "Follow response: %02x" % response
+            # print "Follow response: %02x" % response
             sys.stdout.flush()
         else:
             print "ERROR: Could not find the selected device"
@@ -620,8 +712,8 @@ if __name__ == '__main__':
         # Dump packets
         while True:
             packetCount = dumpPackets()
-            #print "Packet count: "+str(packetCount)
-            #sys.stdout.flush()
+            # print "Packet count: "+str(packetCount)
+            # sys.stdout.flush()
             time.sleep(1)
 
         # Close gracefully

@@ -1,0 +1,13 @@
+{
+  "demozone": demozone,
+  "deviceId": piId,
+  "dateTime": int(time.time()),
+  "dateTimeString": dateTimeString,
+  "raceStatus": raceStatus,
+  "raceId": raceCount,
+  "carId": myDeviceAddress,
+  "carName": myCarName,
+  "lap": currentLap,
+  "type": "CAR_OFFTRACK",
+  "lastKnownTrack": tentative_offtrack_position
+}
